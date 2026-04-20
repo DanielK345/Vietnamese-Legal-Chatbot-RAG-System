@@ -3,7 +3,7 @@
 # Frontend Entrypoint Script for Vietnamese Legal Chatbot
 # This script sets up the environment and runs the Streamlit application
 
-echo "🚀 Starting Vietnamese Legal Chatbot Frontend..."
+echo "Starting Vietnamese Legal Chatbot Frontend..."
 
 # Set environment variables if not already set
 export STREAMLIT_SERVER_PORT=${STREAMLIT_SERVER_PORT:-8051}
@@ -34,7 +34,7 @@ check_backend() {
         attempt=$((attempt + 1))
     done
     
-    echo "⚠️  Backend not available after $max_attempts attempts. Starting frontend anyway..."
+    echo "❌  Backend not available after $max_attempts attempts. Starting frontend anyway..."
     return 1
 }
 
@@ -58,15 +58,15 @@ fi
 INTERFACE_FILE="chat_interface_new.py"
 if [ "$USE_LEGACY_INTERFACE" = "true" ]; then
     INTERFACE_FILE="chat_interface.py"
-    echo "📱 Using legacy interface: $INTERFACE_FILE"
+    echo "📺 Using legacy interface: $INTERFACE_FILE"
 else
-    echo "📱 Using new interface: $INTERFACE_FILE"
+    echo "📺 Using new interface: $INTERFACE_FILE"
 fi
 
 # Verify the interface file exists
 if [ ! -f "$INTERFACE_FILE" ]; then
     echo "❌ Error: $INTERFACE_FILE not found!"
-    echo "📂 Available files:"
+    echo " 📄 Available files:"
     ls -la *.py
     exit 1
 fi
@@ -74,10 +74,10 @@ fi
 # Set up logging
 export STREAMLIT_LOGGER_LEVEL=${LOG_LEVEL:-INFO}
 
-echo "🌟 Starting Streamlit application..."
-echo "🌐 Interface: $INTERFACE_FILE"
-echo "🔗 Port: $STREAMLIT_SERVER_PORT"
-echo "📡 Backend: $API_BASE_URL"
+echo "🌐 Starting Streamlit application..."
+echo "📺 Interface: $INTERFACE_FILE"
+echo "📡 Port: $STREAMLIT_SERVER_PORT"
+echo "🔗 Backend: $API_BASE_URL"
 
 # Health check function for the container
 health_check() {

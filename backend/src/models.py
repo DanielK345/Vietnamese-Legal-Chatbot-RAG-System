@@ -2,7 +2,7 @@ import asyncio
 import logging
 from xml.dom import ValidationErr
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.future import select
 from sqlalchemy.orm import Session
@@ -13,8 +13,6 @@ from database import engine, get_db
 from utils import setup_logging
 
 Base = declarative_base()
-Base.metadata.create_all(bind=engine)
-db = next(get_db())
 setup_logging()
 logger = logging.getLogger(__name__)
 
@@ -26,13 +24,17 @@ class ChatConversation(Base):
     conversation_id = Column(String(50), nullable=False, default="")
     bot_id = Column(String(100), nullable=False)
     user_id = Column(String(100), nullable=False)
-    message = Column(String)  # Assuming TextField is equivalent to String in SQLAlchemy
+    message = Column(Text)  # Use Text for unlimited length on MySQL
     is_request = Column(Boolean, default=True)
     completed = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True), onupdate=func.now(), server_default=func.now()
     )
+
+
+Base.metadata.create_all(bind=engine)
+db = next(get_db())
 
 
 def load_conversation(conversation_id: str):
@@ -57,7 +59,7 @@ async def read_conversation(conversation_id: str):
         return db_conversation
 
 
-def convert_conversation_to_openai_messages(user_conversations):
+def convert_conversation_to_messages(user_conversations):
     conversation_list = [
         {"role": "system", "content": "You are an amazing virtual assistant"}
     ]
@@ -98,7 +100,7 @@ def update_chat_conversation(
 
 def get_conversation_messages(conversation_id):
     user_conversations = load_conversation(conversation_id)
-    return convert_conversation_to_openai_messages(user_conversations)
+    return convert_conversation_to_messages(user_conversations)
 
 
 class Document(Base):

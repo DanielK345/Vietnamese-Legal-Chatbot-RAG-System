@@ -1,0 +1,28 @@
+{
+  "dataset_info": {
+    "source": "phuocsang/hoidap-tvpl-20k",
+    "description": "Vietnamese Legal Q&A Dataset processed for fine-tuning",
+    "total_samples": 21529,
+    "train_samples": 19536,
+    "test_samples": 1993
+  },
+  "processing_info": {
+    "filters_applied": [
+      "Minimum question length: 10 characters",
+      "Minimum answer length: 50 characters",
+      "Maximum answer length: 5000 characters",
+      "Questions must end with '?'",
+      "Text cleaning: removed extra whitespace and special characters"
+    ],
+    "retention_rate": "97.9%"
+  },
+  "file_formats": {
+    "qa_format": "Simple question-answer pairs",
+    "instruction_format": "Instruction tuning format with instruction/input/output",
+    "conversation_format": "Multi-turn conversation format for chatbot training"
+  },
+  "sample_counts": {
+    "train": 19536,
+    "test": 1993
+  }
+}

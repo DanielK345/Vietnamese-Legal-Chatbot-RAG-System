@@ -3,22 +3,23 @@ import logging
 import os
 import requests
 
-from openai import OpenAI
+import google.generativeai as genai
 from redis import InvalidResponse
 
 from custom_embedding import get_custom_embedding
 
 logger = logging.getLogger(__name__)
 
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", default=None)
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", default=None)
 VIETNAMESE_LLM_API_URL = os.environ.get("VIETNAMESE_LLM_API_URL", default="http://http://3.89.75.45:6000/v1/chat/completions")
 
 
-def get_openai_client():
-    return OpenAI(api_key=OPENAI_API_KEY)
+def get_gemini_client():
+    genai.configure(api_key=GEMINI_API_KEY)
+    return genai.GenerativeModel("gemini-2.0-flash")
 
 
-client = get_openai_client()
+client = get_gemini_client()
 
 
 def vietnamese_llm_chat_complete(messages=(), temperature=0.7, max_tokens=512):
@@ -50,25 +51,51 @@ def vietnamese_llm_chat_complete(messages=(), temperature=0.7, max_tokens=512):
             return content
         else:
             logger.error(f"Vietnamese LLM API error: {response.status_code} - {response.text}")
-            # Fallback to OpenAI nếu Vietnamese LLM API fail
-            logger.info("Falling back to OpenAI API")
-            return openai_chat_complete(messages)
+            # Fallback to Gemini nếu Vietnamese LLM API fail
+            logger.info("Falling back to Gemini API")
+            return gemini_chat_complete(messages)
             
     except Exception as e:
         logger.error(f"Error calling Vietnamese LLM API: {e}")
-        # Fallback to OpenAI nếu có lỗi
-        logger.info("Falling back to OpenAI API due to error")
-        return openai_chat_complete(messages)
+        # Fallback to Gemini nếu có lỗi
+        logger.info("Falling back to Gemini API due to error")
+        return gemini_chat_complete(messages)
 
 
-def openai_chat_complete(messages=(), model="gpt-4o-mini", raw=False):
+def _convert_messages_to_gemini(messages):
+    """Convert OpenAI-style messages to Gemini format."""
+    system_instruction = None
+    contents = []
+    for msg in messages:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        if role == "system":
+            system_instruction = content
+        elif role == "assistant":
+            contents.append({"role": "model", "parts": [content]})
+        else:
+            contents.append({"role": "user", "parts": [content]})
+    return system_instruction, contents
+
+
+def gemini_chat_complete(messages=(), model="gemini-2.0-flash", raw=False):
     logger.info("Chat complete for {}".format(messages))
-    response = client.chat.completions.create(model=model, messages=messages)
-    if raw:
-        return response.choices[0].message
-    output = response.choices[0].message
+    system_instruction, contents = _convert_messages_to_gemini(messages)
+    model_instance = client
+    if model != "gemini-2.0-flash" or system_instruction:
+        model_instance = genai.GenerativeModel(
+            model, system_instruction=system_instruction
+        )
+    elif system_instruction:
+        model_instance = genai.GenerativeModel(
+            "gemini-2.0-flash", system_instruction=system_instruction
+        )
+    response = model_instance.generate_content(contents)
+    output = response.text
     logger.info("Chat complete output: ".format(output))
-    return output.content
+    if raw:
+        return response
+    return output
 
 
 def get_embedding(text, model=None):
@@ -169,7 +196,7 @@ Câu hỏi đã viết lại:"""
     logger.info(f"Rephrase input messages: {openai_messages}")
 
     try:
-        rephrased = openai_chat_complete(openai_messages)
+        rephrased = gemini_chat_complete(openai_messages)
         logger.info(f"Rephrased question: {rephrased}")
         return rephrased.strip()
     except Exception as e:
@@ -267,7 +294,7 @@ Phân loại:"""
     logger.info(f"Routing query: {message}")
 
     try:
-        route = openai_chat_complete(openai_messages).strip().lower()
+        route = gemini_chat_complete(openai_messages).strip().lower()
 
         # Validate route
         valid_routes = ["legal_rag", "agent_tools", "web_search", "general_chat"]
@@ -318,88 +345,58 @@ def get_financial_tools():
     return tools
 
 
-def get_financial_agent_answer(messages, model="gpt-4o", tools=None):
+def get_financial_agent_answer(messages, model="gemini-2.0-flash", tools=None):
     if not tools:
         tools = get_financial_tools()
 
-    # Execute the chat completion request
-    resp = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        tools=tools,
+    # Convert messages and generate content using Gemini
+    system_instruction, contents = _convert_messages_to_gemini(messages)
+    model_instance = genai.GenerativeModel(
+        model, system_instruction=system_instruction, tools=tools if tools else None
     )
+    resp = model_instance.generate_content(contents)
 
     # Attempt to extract response details
-    if not resp.choices:
-        logger.error("No choices available in the response.")
+    if not resp.candidates:
+        logger.error("No candidates available in the response.")
         return {
             "role": "assistant",
             "content": "An error occurred, please try again later.",
         }
 
-    choice = resp.choices[0]
-    return choice
+    candidate = resp.candidates[0]
+    return candidate
 
 
-def convert_tool_calls_to_json(tool_calls):
-    return {
-        "role": "assistant",
-        "tool_calls": [
-            {
-                "id": call.id,
-                "type": "function",
-                "function": {
-                    "arguments": json.dumps(call.function.arguments),
-                    "name": call.function.name,
-                },
-            }
-            for call in tool_calls
-        ],
-    }
-
-
-def get_financial_agent_handle(messages, model="gpt-4o", tools=None):
+def get_financial_agent_handle(messages, model="gemini-2.0-flash", tools=None):
     if not tools:
         tools = get_financial_tools()
-    choice = get_financial_agent_answer(messages, model, tools)
+    candidate = get_financial_agent_answer(messages, model, tools)
 
-    resp_content = choice.message.content
-    resp_tool_calls = choice.message.tool_calls
-    # Prepare the assistant's message
-    if resp_content:
-        return resp_content
+    # Extract content from Gemini response
+    part = candidate.content.parts[0]
 
-    elif resp_tool_calls:
-        logger.info(f"Process the tools call: {resp_tool_calls}")
-        # List to hold tool response messages
-        tool_messages = []
-        # Iterate through each tool call and execute the corresponding function
-        for tool_call in resp_tool_calls:
-            # Display the tool call details
-            logger.info(
-                f"Tool call: {tool_call.function.name}({tool_call.function.arguments})"
-            )
-            # Retrieve the tool function from available tools
-            tool = available_tools[tool_call.function.name]
-            # Parse the arguments for the tool function
-            tool_args = json.loads(tool_call.function.arguments)
-            # Execute the tool function and get the result
-            result = tool(**tool_args)
-            tool_args["result"] = result
-            # Append the tool's response to the tool_messages list
-            tool_messages.append(
-                {
-                    "role": "tool",  # Indicate this message is from a tool
-                    "content": json.dumps(tool_args),  # The result of the tool function
-                    "tool_call_id": tool_call.id,  # The ID of the tool call
-                }
-            )
-        # Update the new message to get response from LLM
-        # Append the tool messages to the existing messages
-        # Check here: https://platform.openai.com/docs/guides/function-calling
-        next_messages = (
-            messages + [convert_tool_calls_to_json(resp_tool_calls)] + tool_messages
-        )
-        return get_financial_agent_handle(next_messages, model, tools)
+    if hasattr(part, 'text') and part.text:
+        return part.text
+
+    elif hasattr(part, 'function_call') and part.function_call:
+        function_call = part.function_call
+        logger.info(f"Process the function call: {function_call}")
+        # Execute the function
+        tool_name = function_call.name
+        tool_args = dict(function_call.args)
+        logger.info(f"Tool call: {tool_name}({tool_args})")
+
+        # Retrieve the tool function from available tools
+        tool = available_tools[tool_name]
+        result = tool(**tool_args)
+        tool_args["result"] = result
+
+        # Add function response and recurse
+        messages = messages + [
+            {"role": "assistant", "content": f"Calling {tool_name} with {json.dumps(tool_args)}"},
+            {"role": "user", "content": f"Function {tool_name} returned: {json.dumps(tool_args)}"},
+        ]
+        return get_financial_agent_handle(messages, model, tools)
     else:
-        raise InvalidResponse(f"The response is invalid: {choice}")
+        raise InvalidResponse(f"The response is invalid: {candidate}")

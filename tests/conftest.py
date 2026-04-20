@@ -21,9 +21,9 @@ def mock_redis():
 
 
 @pytest.fixture
-def mock_openai():
-    """Mock OpenAI client"""
-    with patch("openai.OpenAI") as mock:
+def mock_gemini():
+    """Mock Gemini client"""
+    with patch("google.generativeai.GenerativeModel") as mock:
         yield mock
 
 
@@ -45,7 +45,7 @@ def mock_database():
 def test_config():
     """Test configuration"""
     return {
-        "OPENAI_API_KEY": "test-key",
+        "GEMINI_API_KEY": "test-key",
         "REDIS_URL": "redis://localhost:6379",
         "QDRANT_URL": "http://localhost:6333",
         "DATABASE_URL": "mysql://test:test@localhost/test",
@@ -58,7 +58,7 @@ def setup_test_env():
     """Setup test environment variables"""
     os.environ.update(
         {
-            "OPENAI_API_KEY": "test-key",
+            "GEMINI_API_KEY": "test-key",
             "REDIS_URL": "redis://localhost:6379",
             "QDRANT_URL": "http://localhost:6333",
             "DATABASE_URL": "mysql://test:test@localhost/test",

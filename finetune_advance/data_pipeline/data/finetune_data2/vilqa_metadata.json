@@ -1,0 +1,29 @@
+{
+  "dataset_info": {
+    "source": "huyhuy123/ViLQA",
+    "description": "Vietnamese Legal Q&A Dataset (ViLQA) processed for fine-tuning",
+    "total_samples": 43420,
+    "training_samples": 43420,
+    "split_type": "training_only"
+  },
+  "processing_info": {
+    "filters_applied": [
+      "Minimum question length: 10 characters",
+      "Minimum answer length: 50 characters",
+      "Maximum answer length: 8000 characters",
+      "Text cleaning: removed extra whitespace and special characters"
+    ],
+    "retention_rate": "99.6%",
+    "original_samples": 43588,
+    "processed_samples": 43420
+  },
+  "file_formats": {
+    "qa_format": "Simple question-answer pairs for training",
+    "instruction_format": "Instruction tuning format with instruction/input/output",
+    "conversation_format": "Multi-turn conversation format for chatbot training"
+  },
+  "statistics": {
+    "avg_question_length": 75.8745508982036,
+    "avg_answer_length": 882.6999539382773
+  }
+}

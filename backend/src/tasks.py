@@ -11,7 +11,7 @@ from brain import (
     detect_user_intent,
     gen_doc_prompt,
     get_embedding,
-    openai_chat_complete,
+    gemini_chat_complete,
     vietnamese_llm_chat_complete,
 )
 from configs import DEFAULT_COLLECTION_NAME
@@ -259,7 +259,7 @@ def bot_route_answer_message(history, question):
             ]
         )
 
-        return openai_chat_complete(openai_messages)
+        return gemini_chat_complete(openai_messages)
 
     else:  # general_chat
         # Handle general conversation

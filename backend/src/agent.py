@@ -1,12 +1,13 @@
 import json
 import logging
-from typing import Dict
+import os
+from typing import Any, Dict
 
 from celery import shared_task
 from llama_index.core.agent import ReActAgent
-from llama_index.core.llms import ChatMessage
+from llama_index.core.llms import ChatMessage, CompletionResponse, CustomLLM, LLMMetadata
 from llama_index.core.tools import BaseTool, FunctionTool
-from llama_index.llms.openai import OpenAI
+import google.generativeai as genai
 
 from legal_tools import (
     calculate_contract_penalty,
@@ -194,7 +195,30 @@ all_tools = [
 ]
 
 # Initialize LLM and Agent
-llm = OpenAI(model="gpt-4o-mini", temperature=0.1)
+
+class GeminiLLM(CustomLLM):
+    """Custom LLM wrapper for Google Gemini using google-generativeai SDK."""
+    model_name: str = "gemini-2.0-flash"
+    temperature: float = 0.1
+
+    @property
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata(model_name=self.model_name)
+
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+        model = genai.GenerativeModel(self.model_name)
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(temperature=self.temperature),
+        )
+        return CompletionResponse(text=response.text)
+
+    def stream_complete(self, prompt: str, **kwargs: Any):
+        raise NotImplementedError("Streaming not supported for this wrapper.")
+
+
+llm = GeminiLLM()
 
 # Create agent with Vietnamese legal context
 agent_system_prompt = """Bạn là trợ lý AI chuyên về tư vấn pháp luật Việt Nam với khả năng sử dụng các công cụ.

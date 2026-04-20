@@ -1,0 +1,33 @@
+{
+  "dataset_info": {
+    "source": "chillies/vn-legal-conversation",
+    "description": "Vietnamese Legal Conversation Dataset processed for fine-tuning",
+    "total_samples": 34566,
+    "original_splits": {
+      "train": 31433,
+      "validation": 1746,
+      "test": 1747
+    },
+    "combined_for_training": true
+  },
+  "processing_info": {
+    "filters_applied": [
+      "Minimum question length: 10 characters",
+      "Maximum question length: 2000 characters",
+      "Minimum answer length: 50 characters",
+      "Maximum answer length: 8000 characters",
+      "Text cleaning: removed extra whitespace and special characters"
+    ],
+    "retention_rate": "99.0%"
+  },
+  "file_formats": {
+    "qa_format": "Simple question-answer pairs",
+    "instruction_format": "Instruction tuning format with instruction/input/output",
+    "conversation_format": "Multi-turn conversation format for chatbot training"
+  },
+  "statistics": {
+    "total_samples": 34566,
+    "avg_question_length": 306.9,
+    "avg_answer_length": 1409.2
+  }
+}

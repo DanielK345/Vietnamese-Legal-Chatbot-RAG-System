@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, List
 
-from brain import openai_chat_complete
+from brain import gemini_chat_complete
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +144,7 @@ Bây giờ hãy tạo {num_queries} câu hỏi cho câu hỏi gốc trên:"""
     logger.info(f"Rewriting query: {original_query}")
 
     try:
-        response = openai_chat_complete(messages)
+        response = gemini_chat_complete(messages)
 
         # Parse the response to extract queries
         queries = []
@@ -230,7 +230,7 @@ Câu hỏi đã viết lại:"""
     logger.info(f"Rewriting query with context: {query}")
 
     try:
-        rewritten = openai_chat_complete(messages)
+        rewritten = gemini_chat_complete(messages)
         logger.info(f"Rewritten query: {rewritten}")
         return rewritten.strip()
     except Exception as e:

@@ -32,7 +32,7 @@ class CompleteRequest(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Hello From Vietnamese Legal Chatbot Backend!"}
 
 
 @app.get("/health")

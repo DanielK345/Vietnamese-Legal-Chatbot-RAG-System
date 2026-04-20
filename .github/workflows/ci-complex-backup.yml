@@ -137,7 +137,7 @@ jobs:
 
       - name: Set up test environment
         run: |
-          echo "OPENAI_API_KEY=test-key" >> $GITHUB_ENV
+          echo "GEMINI_API_KEY=test-key" >> $GITHUB_ENV
           echo "REDIS_URL=redis://localhost:6379" >> $GITHUB_ENV
           echo "DATABASE_URL=mysql://root:test_password@localhost:3306/test_legal_db" >> $GITHUB_ENV
           echo "QDRANT_URL=http://localhost:6333" >> $GITHUB_ENV
@@ -251,7 +251,7 @@ jobs:
         run: |
           # Test backend container
           docker run --rm -d --name backend-test \
-            -e OPENAI_API_KEY=test-key \
+            -e GEMINI_API_KEY=test-key \
             -e REDIS_URL=redis://localhost:6379 \
             -p 8000:8000 \
             legal-chatbot-backend:test

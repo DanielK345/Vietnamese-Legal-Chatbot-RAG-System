@@ -1,8 +1,10 @@
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage
+import os
 
-# load the model
-summarizer_model = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
+import google.generativeai as genai
+
+# Configure and load the model
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+summarizer_model = genai.GenerativeModel("gemini-2.0-flash")
 
 
 def summarize_text(text):
@@ -20,6 +22,8 @@ def summarize_text(text):
 
     prompt = template.format(text=text)
 
-    messages = [HumanMessage(content=prompt)]
-    summary = summarizer_model(messages)
-    return summary.content
+    response = summarizer_model.generate_content(
+        prompt,
+        generation_config=genai.types.GenerationConfig(temperature=0),
+    )
+    return response.text

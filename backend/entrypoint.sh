@@ -9,7 +9,7 @@ ls -la
 echo "Files in src directory:"
 ls -la src/ || echo "src directory not found"
 echo "Environment variables:"
-env | grep -E "(PYTHON|DEBUG|OPENAI)" || echo "No relevant env vars found"
+env | grep -E "(PYTHON|DEBUG|GEMINI)" || echo "No relevant env vars found"
 echo "=== End Debug Info ==="
 
 # If no command is provided, start the FastAPI server
